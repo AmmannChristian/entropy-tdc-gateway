@@ -1,0 +1,26 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gofumpt
+    - goimports
+    - govet
+    - gosimple
+    - ineffassign
+    - misspell
+    - staticcheck
+
+linters-settings:
+  gofumpt:
+    extra-rules: true
+  goimports:
+    local-prefixes: entropy-tdc-gateway
+
+issues:
+  max-same-issues: 0
+  max-issues-per-linter: 0
+  exclude-use-default: false

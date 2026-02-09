@@ -1,0 +1,242 @@
+syntax = "proto3";
+
+package entropy;
+
+option go_package = "entropy-tdc-gateway/pkg/pb";
+
+// ChecksumAlgo enumerates the supported checksum algorithms for batch integrity verification.
+enum ChecksumAlgo {
+  CHECKSUM_ALGO_UNSPECIFIED = 0;
+  CHECKSUM_SHA256 = 1;
+}
+
+// SignatureAlgo enumerates the supported digital signature algorithms for batch authentication.
+enum SignatureAlgo {
+  SIGNATURE_ALGO_UNSPECIFIED = 0;
+  SIGNATURE_ED25519 = 1;
+}
+
+// Compression enumerates the supported compression schemes applied to event payloads.
+enum Compression {
+  COMPRESSION_NONE = 0;
+  COMPRESSION_ZSTD = 1;
+}
+
+// WhiteningStats captures output statistics from the entropy conditioning pipeline
+// (Von Neumann extractor followed by a hash conditioner).
+message WhiteningStats {
+  // Total number of raw input bits before conditioning.
+  uint32 input_bits = 1;
+  // Total number of conditioned output bits after extraction.
+  uint32 output_bits = 2;
+  // Ratio of output_bits to input_bits, representing conditioning efficiency.
+  double extraction_rate = 3;
+}
+
+// TestSummary holds edge-side quick-check results and optional lightweight
+// NIST SP 800-90B health test statistics computed over a sliding window.
+message TestSummary {
+  // P-value from the monobit frequency test, if computed.
+  double freq_pvalue = 1;
+  // P-value from the runs test, if computed.
+  double runs_pvalue = 2;
+  // Repetition Count Test statistic.
+  optional double rct_stat = 3;
+  // Adaptive Proportion Test statistic.
+  optional double apt_stat = 4;
+  // Window size used for the Repetition Count Test.
+  optional uint32 rct_window = 5;
+  // Window size used for the Adaptive Proportion Test.
+  optional uint32 apt_window = 6;
+}
+
+// KvMeta carries free-form key-value metadata labels attached to a batch or handshake.
+message KvMeta {
+  // Arbitrary string labels, such as deployment location or sensor identifier.
+  map<string, string> labels = 1;
+}
+
+// SubscriptionRequest initiates a server-to-client streaming subscription.
+message SubscriptionRequest {
+  // Unique identifier for the subscribing client (e.g., "quarkus-validator-1").
+  string client_id = 1;
+}
+
+// EntropyStream defines the gRPC service for entropy data exchange between
+// edge gateways and the cloud processor backend.
+service EntropyStream {
+  // StreamEntropy opens a bidirectional stream for transmitting entropy batches
+  // from the edge gateway to the cloud and receiving acknowledgments in return.
+  rpc StreamEntropy(stream EntropyBatch) returns (stream Ack);
+
+  // SubscribeBatches opens a server-to-client stream that broadcasts received
+  // entropy batches to subscribing downstream consumers.
+  rpc SubscribeBatches(SubscriptionRequest) returns (stream EntropyBatch);
+
+  // Control opens a bidirectional stream for exchanging control plane messages
+  // such as configuration updates, health reports, and keepalive pings.
+  rpc Control(stream ControlMessage) returns (stream ControlMessage);
+}
+
+// EntropyBatch represents a batch of TDC events collected at the edge gateway
+// and transmitted to the cloud for analysis and storage.
+message EntropyBatch {
+  // Ordered sequence of time-to-digital converter events in this batch.
+  repeated TDCEvent events = 1;
+  // Edge-computed quality metrics summarizing this batch.
+  EdgeMetrics metrics = 2;
+  // Timestamp when this batch was assembled, in microseconds since epoch.
+  uint64 batch_timestamp_us = 3;
+  // Monotonically increasing sequence number for ordering and gap detection.
+  uint32 batch_sequence = 4;
+
+  // Identifier of the originating edge device (e.g., "raspi-07").
+  string source_id = 5;
+  // Start of the observation window, in microseconds since epoch.
+  uint64 t_start_us = 6;
+  // End of the observation window, in microseconds since epoch.
+  uint64 t_end_us = 7;
+  // Checksum computed over the raw (pre-compression) event payload.
+  bytes checksum = 8;
+  // Algorithm used to compute the checksum field.
+  ChecksumAlgo checksum_algo = 9;
+
+  // Digital signature over the concatenation of events, checksum, and header fields.
+  optional bytes signature = 10;
+  // Algorithm used to produce the signature field.
+  optional SignatureAlgo signature_algo = 11;
+
+  // Compression scheme applied to the events payload; COMPRESSION_NONE if uncompressed.
+  Compression compression = 12;
+  // Number of events lost or discarded at the edge before batching.
+  uint32 dropped_events = 13;
+  // Statistics from the entropy conditioning (whitening) stage, if applied.
+  optional WhiteningStats whitening = 14;
+  // Detailed edge-side health test results for this batch.
+  optional TestSummary tests = 15;
+  // Free-form metadata labels (e.g., site, serial number).
+  KvMeta meta = 16;
+
+}
+
+// TDCEvent represents a single time-to-digital converter measurement
+// captured by a Raspberry Pi edge device.
+message TDCEvent {
+  // Raspberry Pi system clock timestamp in microseconds since epoch.
+  uint64 rpi_timestamp_us = 1;
+  // TDC hardware timestamp in picoseconds, representing the precise detection time.
+  uint64 tdc_timestamp_ps = 2;
+  // TDC input channel number (typically 0 for single-channel configurations).
+  uint32 channel = 3;
+  // Time difference from the previous event in picoseconds, if available.
+  optional int64 delta_ps = 4;
+  // Bit flags indicating hardware conditions (e.g., saturation, overrun).
+  optional uint32 flags = 5;
+}
+
+// EdgeMetrics contains quality and performance metrics computed at the edge
+// gateway for a given entropy batch.
+message EdgeMetrics {
+  // Shannon entropy estimate (bits per symbol) computed over the batch.
+  double quick_shannon_entropy = 1;
+  // Whether the monobit frequency test passed at the edge.
+  bool frequency_test_passed = 2;
+  // Whether the runs test passed at the edge.
+  bool runs_test_passed = 3;
+  // Current size of the local entropy pool in bytes.
+  uint32 pool_size = 4;
+  // Time spent processing this batch at the edge, in microseconds.
+  uint64 processing_latency_us = 5;
+  // Estimated bit bias in parts per million, if measured.
+  optional double bias_ppm = 6;
+  // Whether the lightweight Repetition Count Test passed at the edge.
+  optional bool rct_passed = 7;
+  // Whether the lightweight Adaptive Proportion Test passed at the edge.
+  optional bool apt_passed = 8;
+}
+
+// Ack is the cloud-to-edge acknowledgment for a received entropy batch.
+message Ack {
+  // Whether the batch was accepted and persisted successfully.
+  bool success = 1;
+  // Sequence number of the acknowledged batch.
+  uint32 received_sequence = 2;
+  // Human-readable status or error description.
+  string message = 3;
+  // Sequence numbers of batches not yet received, for gap detection and retransmission.
+  repeated uint32 missing_sequences = 4;
+  // Server-side receive timestamp in microseconds since epoch.
+  optional uint64 received_at_us = 5;
+  // When true, indicates the edge should reduce its transmission rate.
+  optional bool backpressure = 6;
+  // Reason for the backpressure signal, if applicable.
+  optional string backpressure_reason = 7;
+}
+
+// ConfigUpdate carries tunable runtime parameters pushed from the cloud to the edge.
+// Full NIST SP 800-90B validation is performed in the cloud; these thresholds
+// control lightweight edge-side checks and batching behavior.
+message ConfigUpdate {
+  // Desired number of events per batch.
+  optional uint32 target_batch_size = 1;
+  // Maximum requests per second for the entropy bytes API endpoint.
+  optional uint32 max_rps = 2;
+  // Window size for the Repetition Count Test at the edge.
+  optional uint32 rct_window = 3;
+  // Window size for the Adaptive Proportion Test at the edge.
+  optional uint32 apt_window = 4;
+  // Bias warning threshold in parts per million.
+  optional double freq_warn_ppm = 5;
+  // Whether to enable Zstandard compression for event payloads.
+  optional bool enable_zstd = 6;
+}
+
+// HealthReport conveys the operational status of the edge gateway to the cloud.
+message HealthReport {
+  // Whether the gateway is ready to serve entropy (mirrors readiness probe).
+  bool ready = 1;
+  // Whether the gateway is operating normally (mirrors liveness probe).
+  bool healthy = 2;
+  // Current size of the local entropy pool in bytes.
+  uint32 pool_size = 3;
+  // Round-trip latency of the most recent acknowledgment, in microseconds.
+  uint64 last_ack_latency_us = 4;
+  // Free-text summary of recent operational events (errors, reconnections).
+  string summary = 5;
+}
+
+// Nack signals a rejected or unprocessable batch from the cloud to the edge.
+message Nack {
+  // Sequence number the cloud expected but did not receive correctly.
+  uint32 expected_sequence = 1;
+  // Reason for the rejection (e.g., "checksum mismatch", "schema error").
+  string reason = 2;
+}
+
+// Ping is a keepalive probe sent on the control stream.
+message Ping { uint64 ts_us = 1; }
+// Pong is the response to a Ping keepalive probe.
+message Pong { uint64 ts_us = 1; }
+
+// Hello is the initial handshake message sent by the edge gateway
+// when establishing a control stream connection.
+message Hello {
+  // Identifier of the originating edge device.
+  string source_id = 1;
+  // Software version of the edge gateway.
+  string version = 2;
+  // Optional metadata labels for the connecting device.
+  KvMeta meta = 3;
+}
+
+// ControlMessage is a union wrapper for all control plane message types
+// exchanged over the bidirectional Control stream.
+message ControlMessage {
+  oneof payload {
+    Hello hello = 1;
+    ConfigUpdate config_update = 2;
+    HealthReport health_report = 3;
+    Ping ping = 4;
+    Pong pong = 5;
+  }
+}

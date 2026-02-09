@@ -1,0 +1,58 @@
+[Unit]
+Description=Entropy TDC Gateway - Time-to-Digital Converter entropy collection service
+Documentation=https://github.com/AmmannChristian/entropy-tdc-gateway
+After=network-online.target mosquitto.service
+Wants=network-online.target
+ConditionPathExists=/opt/entropy-tdc-gateway/bin/entropy-tdc-gateway
+
+StartLimitIntervalSec=5min
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=entropy
+Group=entropy
+WorkingDirectory=/opt/entropy-tdc-gateway
+
+# Binary location
+ExecStart=/opt/entropy-tdc-gateway/bin/entropy-tdc-gateway
+
+# Environment file with all configuration
+EnvironmentFile=/etc/entropy-tdc-gateway/entropy-tdc-gateway.env
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/entropy-tdc-gateway/logs
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RemoveIPC=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+MemoryMax=512M
+CPUQuota=50%
+
+# Restart policy
+Restart=always
+RestartSec=10s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=entropy-tdc-gateway
+
+[Install]
+WantedBy=multi-user.target
