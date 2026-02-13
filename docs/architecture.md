@@ -176,11 +176,11 @@ The MQTT package provides a receive-only client built on the Eclipse Paho librar
 - `Client` -- Wraps `paho.Client` with auto-reconnect, TLS support, and connection lifecycle tracking. Generates a UUID v4-based client identifier when none is configured.
 - `Config` -- Holds broker URL, client ID, topic filters, QoS level, and authentication credentials.
 - `RxHandler` -- Implements the `Handler` interface by parsing raw MQTT payloads into `TDCEvent` structures and forwarding them to a `Collector`.
-- `TDCEvent` -- Represents a single TDC measurement with fields for the Raspberry Pi reception timestamp (`RpiTimestampUs`), TDC picosecond timestamp (`TdcTimestampPs`), channel number (`Channel`), and optional delta and flags fields.
+- `TDCEvent` -- Represents a single TDC measurement with fields for the gateway ingestion timestamp (`RpiTimestampUs`), TDC picosecond timestamp (`TdcTimestampPs`), channel number (`Channel`), and optional delta and flags fields.
 
 **Parsing Logic:**
 
-Raw MQTT payloads contain a single decimal unsigned 64-bit integer representing a picosecond timestamp. The handler trims whitespace, parses the integer, extracts the channel number from the trailing numeric segment of the MQTT topic path, and annotates the event with the current gateway time in microseconds.
+Raw MQTT payloads contain a single decimal unsigned 64-bit integer representing a picosecond timestamp. The handler trims whitespace, parses the integer, extracts the channel number from the trailing numeric segment of the MQTT topic path, and annotates the event with the current gateway time in microseconds. Metadata topics ending with `/meta` are ignored and are not treated as TDC events.
 
 **Connection Management:**
 
@@ -652,7 +652,7 @@ The `EntropyStream` service defines three RPC methods:
 - Optional whitening statistics and test summary
 
 **TDCEvent** -- A single measurement containing:
-- `rpi_timestamp_us` -- Raspberry Pi system clock timestamp in microseconds
+- `rpi_timestamp_us` -- Gateway ingestion timestamp in microseconds (set when the MQTT message is received)
 - `tdc_timestamp_ps` -- TDC hardware timestamp in picoseconds
 - `channel` -- TDC input channel number
 - `delta_ps` -- Optional inter-event time difference

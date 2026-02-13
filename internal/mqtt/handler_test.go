@@ -130,6 +130,24 @@ func TestRxHandler_ZeroTimestamp(t *testing.T) {
 	}
 }
 
+func TestRxHandler_MetaTopicIgnored(t *testing.T) {
+	t.Parallel()
+
+	testutil.ResetRegistryForTest(t)
+
+	collector := &recordingCollector{}
+	handler := RxHandler{Collector: collector}
+
+	handler.OnMessage("timestamps/channel/meta", []byte("{'time':'2026-02-13T17:00:00Z'}"))
+
+	if got := collector.Count(); got != 0 {
+		t.Fatalf("collector should ignore meta topic, got %d events", got)
+	}
+	if got := promtest.ToFloat64(metrics.EventsDropped.WithLabelValues("parse_error")); got != 0 {
+		t.Fatalf("parse_error metric mismatch: got %f, want 0", got)
+	}
+}
+
 func TestRxHandler_NilCollectorDoesNotPanic(t *testing.T) {
 	t.Parallel()
 
@@ -198,6 +216,27 @@ func TestExtractChannelFromTopic(t *testing.T) {
 		got := extractChannelFromTopic(tc.topic)
 		if got != tc.channel {
 			t.Errorf("extractChannelFromTopic(%q) = %d, want %d", tc.topic, got, tc.channel)
+		}
+	}
+}
+
+func TestIsMetaTopic(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		topic string
+		want  bool
+	}{
+		{"timestamps/channel/meta", true},
+		{"timestamps/channel/1", false},
+		{"timestamps/channel/META", true},
+		{" timestamps/channel/meta ", true},
+	}
+
+	for _, tc := range testCases {
+		got := isMetaTopic(tc.topic)
+		if got != tc.want {
+			t.Errorf("isMetaTopic(%q) = %v, want %v", tc.topic, got, tc.want)
 		}
 	}
 }

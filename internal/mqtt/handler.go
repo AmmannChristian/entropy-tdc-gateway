@@ -43,6 +43,12 @@ func (handler *RxHandler) OnMessage(topic string, payload []byte) {
 	startTime := time.Now()
 	metrics.RecordMQTTMessage()
 
+	// lobsang publishes status metadata on ".../meta" using a Python dict string.
+	// This is intentionally excluded from the TDC event stream.
+	if isMetaTopic(topic) {
+		return
+	}
+
 	event, err := parseRawTimestamp(topic, payload)
 	if err != nil {
 		metrics.RecordEventDropped("parse_error")
@@ -77,6 +83,11 @@ func (handler *RxHandler) OnMessage(topic string, payload []byte) {
 	if latencyMicros > 0 {
 		metrics.ProcessingLatency.Observe(float64(latencyMicros))
 	}
+}
+
+// isMetaTopic reports whether the topic carries non-event metadata.
+func isMetaTopic(topic string) bool {
+	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(topic)), "/meta")
 }
 
 // extractChannelFromTopic parses the trailing numeric segment of the MQTT

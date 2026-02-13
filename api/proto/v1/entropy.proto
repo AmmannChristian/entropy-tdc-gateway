@@ -120,9 +120,10 @@ message EntropyBatch {
 }
 
 // TDCEvent represents a single time-to-digital converter measurement
-// captured by a Raspberry Pi edge device.
+// ingested by the edge gateway.
 message TDCEvent {
-  // Raspberry Pi system clock timestamp in microseconds since epoch.
+  // Gateway ingestion timestamp in microseconds since Unix epoch.
+  // This is assigned when the MQTT event is received by entropy-tdc-gateway.
   uint64 rpi_timestamp_us = 1;
   // TDC hardware timestamp in picoseconds, representing the precise detection time.
   uint64 tdc_timestamp_ps = 2;
