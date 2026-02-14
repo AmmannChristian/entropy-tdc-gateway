@@ -9,6 +9,8 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,7 +52,7 @@ type HTTPServer struct {
 // NewHTTPServer constructs an HTTPServer bound to addr, which defaults to
 // 127.0.0.1:9797. Unless allowPublic is true, the address is restricted to
 // loopback interfaces for security. The server exposes three endpoints:
-//   - GET /api/v1/entropy/bytes?bytes=N -- returns N raw entropy bytes
+//   - GET /api/v1/entropy/binary?bytes=N -- returns N raw entropy bytes
 //     (default 32, min 1, max 4096) as application/octet-stream.
 //   - GET /api/v1/health -- reports raw event count, whitened bytes, and
 //     available entropy as plain text.
@@ -96,9 +98,10 @@ func NewHTTPServer(addr string, pool *WhitenedPool, readyThreshold int, allowPub
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(baseUrlV1+"/entropy/bytes", httpServer.handleEntropy)
+	mux.HandleFunc(baseUrlV1+"/entropy/binary", httpServer.handleEntropy)
 	mux.HandleFunc(baseUrlV1+"/health", httpServer.handleHealth)
 	mux.HandleFunc(baseUrlV1+"/ready", httpServer.handleReady)
+	mux.HandleFunc(baseUrlV1+"/openapi", httpServer.handleOpenAPI)
 
 	httpServer.server = &http.Server{
 		Addr:         canonicalAddr,
@@ -356,6 +359,47 @@ func (s *HTTPServer) handleReady(response http.ResponseWriter, _ *http.Request) 
 
 	response.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprintf(response, "ready=true\n")
+}
+
+// handleOpenAPI serves the OpenAPI specification YAML file.
+// This endpoint is public (no auth required) to allow Swagger UI to load the spec.
+func (s *HTTPServer) handleOpenAPI(response http.ResponseWriter, _ *http.Request) {
+	// Construct path to openapi.yaml relative to the binary location
+	// Assuming the binary runs from the project root or api/ is accessible
+	openapiPath := "api/openapi.yaml"
+
+	// Try alternative paths if running from different directories
+	candidatePaths := []string{
+		openapiPath,
+		"../api/openapi.yaml",
+		"../../api/openapi.yaml",
+		"/app/api/openapi.yaml", // Docker container path
+	}
+
+	var specData []byte
+	var err error
+
+	for _, path := range candidatePaths {
+		specData, err = os.ReadFile(filepath.Clean(path))
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
+		log.Printf("entropy http server: failed to read OpenAPI spec: %v", err)
+		http.Error(response, "OpenAPI specification not found", http.StatusNotFound)
+		return
+	}
+
+	response.Header().Set("Content-Type", "application/yaml")
+	response.Header().Set("Access-Control-Allow-Origin", "*")
+	response.Header().Set("Cache-Control", "public, max-age=3600")
+	response.WriteHeader(http.StatusOK)
+
+	if _, err := response.Write(specData); err != nil {
+		log.Printf("entropy http server: failed to write OpenAPI spec: %v", err)
+	}
 }
 
 // setNoStoreHeaders sets Cache-Control and Pragma headers to prevent caching

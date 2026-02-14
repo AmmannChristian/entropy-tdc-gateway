@@ -1,0 +1,268 @@
+openapi: 3.0.3
+info:
+  title: Entropy TDC Gateway API
+  description: |
+    Hardware-based true random number generator (TRNG) service using Timing Delay Cryptography (TDC).
+
+    This service provides cryptographically secure entropy derived from hardware timing jitter.
+    All entropy is whitened using von Neumann decorrelation and subject to continuous health monitoring.
+
+    **Rate Limiting:** 25 requests per second with burst allowance of 25.
+  version: 1.0.0
+  contact:
+    name: Entropy TDC Gateway
+  license:
+    name: MIT
+
+servers:
+  - url: /api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: entropy
+    description: Entropy generation endpoints
+  - name: health
+    description: Service health and readiness checks
+
+paths:
+  /entropy/binary:
+    get:
+      tags:
+        - entropy
+      summary: Get binary entropy
+      description: |
+        Returns cryptographically secure random bytes derived from hardware timing jitter.
+
+        **Quality:** All entropy is whitened and continuously monitored for bias.
+
+        **Rate Limiting:** This endpoint is rate-limited to 25 RPS with burst of 25.
+        On rate limit or insufficient entropy, returns 503 with `Retry-After` header.
+      operationId: getBinaryEntropy
+      parameters:
+        - name: bytes
+          in: query
+          description: Number of entropy bytes to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4096
+            default: 32
+          example: 32
+      responses:
+        '200':
+          description: Successfully returned entropy bytes
+          headers:
+            X-Entropy-Available:
+              description: Number of bytes available in entropy pool after this request
+              schema:
+                type: integer
+              example: 2048
+            X-Entropy-Request:
+              description: Number of bytes requested (echo of query parameter)
+              schema:
+                type: integer
+              example: 32
+            Cache-Control:
+              description: Caching policy (always no-store for entropy)
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Pragma:
+              description: HTTP/1.0 cache control (always no-cache for entropy)
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                minLength: 1
+                maxLength: 4096
+        '400':
+          description: Invalid request (bytes parameter out of range or malformed)
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                invalidParameter:
+                  value: "invalid bytes parameter"
+                outOfRange:
+                  value: "bytes must be between 1 and 4096"
+        '503':
+          description: Service unavailable (rate limit exceeded or insufficient entropy)
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying
+              schema:
+                type: integer
+                minimum: 1
+              example: 1
+            X-Entropy-Available:
+              description: Number of bytes currently available in entropy pool
+              schema:
+                type: integer
+              example: 0
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                rateLimitExceeded:
+                  value: "rate limit exceeded"
+                insufficientEntropy:
+                  value: "insufficient entropy: requested 128, available 64"
+                poolUnavailable:
+                  value: "entropy pool unavailable"
+      security:
+        - bearerAuth: []
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: |
+        Returns current entropy pool statistics in plain text format.
+
+        **Response format:**
+        ```
+        raw_events=<count>
+        whitened_bytes=<count>
+        available_bytes=<count>
+        ```
+
+        Always returns 200 OK even if pool is empty (use `/ready` for readiness).
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is running and responding
+          headers:
+            Cache-Control:
+              description: Caching policy
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Pragma:
+              description: HTTP/1.0 cache control
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: |
+                  Multi-line text with entropy pool statistics:
+                  - raw_events: Number of raw timing events collected
+                  - whitened_bytes: Total bytes produced after whitening
+                  - available_bytes: Bytes currently available for consumption
+              example: |
+                raw_events=123456
+                whitened_bytes=15432
+                available_bytes=2048
+      security:
+        - bearerAuth: []
+
+  /ready:
+    get:
+      tags:
+        - health
+      summary: Readiness check
+      description: |
+        Returns service readiness status based on available entropy.
+
+        **Returns 200** if available entropy meets or exceeds the configured threshold.
+        **Returns 503** if entropy pool is below threshold (service not ready).
+
+        Use this endpoint for Kubernetes readiness probes.
+      operationId: getReady
+      responses:
+        '200':
+          description: Service is ready (sufficient entropy available)
+          headers:
+            X-Entropy-Available:
+              description: Number of bytes currently available in entropy pool
+              schema:
+                type: integer
+              example: 2048
+            X-Ready-Threshold:
+              description: Minimum required bytes for ready status
+              schema:
+                type: integer
+              example: 1024
+            Cache-Control:
+              description: Caching policy
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Pragma:
+              description: HTTP/1.0 cache control
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - "ready=true\n"
+              example: "ready=true\n"
+        '503':
+          description: Service not ready (insufficient entropy)
+          headers:
+            X-Entropy-Available:
+              description: Number of bytes currently available in entropy pool
+              schema:
+                type: integer
+              example: 512
+            X-Ready-Threshold:
+              description: Minimum required bytes for ready status
+              schema:
+                type: integer
+              example: 1024
+            Cache-Control:
+              description: Caching policy
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Pragma:
+              description: HTTP/1.0 cache control
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - "ready=false\n"
+              example: "ready=false\n"
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from the authentication service.
+
+        **Header format:** `Authorization: Bearer <token>`
+
+        The token is automatically injected by the Swagger UI when authenticated.
+
+security:
+  - bearerAuth: []

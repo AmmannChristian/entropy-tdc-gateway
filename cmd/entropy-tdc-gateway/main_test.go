@@ -738,6 +738,9 @@ func TestConvertToProtoBatch(t *testing.T) {
 	if batch.Events[0].Channel != 1 {
 		t.Errorf("event[0].Channel = %d, expected 1", batch.Events[0].Channel)
 	}
+	if got := len(batch.Events[0].WhitenedEntropy); got != 32 {
+		t.Errorf("event[0].WhitenedEntropy length = %d, expected 32", got)
+	}
 
 	// Verify second event
 	if batch.Events[1].RpiTimestampUs != 3000 {
@@ -748,6 +751,9 @@ func TestConvertToProtoBatch(t *testing.T) {
 	}
 	if batch.Events[1].Channel != 2 {
 		t.Errorf("event[1].Channel = %d, expected 2", batch.Events[1].Channel)
+	}
+	if got := len(batch.Events[1].WhitenedEntropy); got != 32 {
+		t.Errorf("event[1].WhitenedEntropy length = %d, expected 32", got)
 	}
 }
 
@@ -1197,11 +1203,7 @@ func TestGRPCForwarder_ConversionLogic(t *testing.T) {
 	// Test that event conversion logic works correctly
 	pbEvents := make([]*pb.TDCEvent, len(events))
 	for i, evt := range events {
-		pbEvents[i] = &pb.TDCEvent{
-			RpiTimestampUs: evt.RpiTimestampUs,
-			TdcTimestampPs: evt.TdcTimestampPs,
-			Channel:        evt.Channel,
-		}
+		pbEvents[i] = toProtoEvent(evt)
 	}
 
 	// Verify the conversion logic works
@@ -1213,6 +1215,12 @@ func TestGRPCForwarder_ConversionLogic(t *testing.T) {
 	}
 	if pbEvents[1].Channel != 2 {
 		t.Errorf("expected channel 2, got %d", pbEvents[1].Channel)
+	}
+	if got := len(pbEvents[0].WhitenedEntropy); got != 32 {
+		t.Errorf("expected event[0] whitened entropy length 32, got %d", got)
+	}
+	if got := len(pbEvents[1].WhitenedEntropy); got != 32 {
+		t.Errorf("expected event[1] whitened entropy length 32, got %d", got)
 	}
 }
 

@@ -79,6 +79,10 @@ func NewWhitenedPoolWithBounds(minSize, maxSize int) *WhitenedPool {
 // preprocessing followed by SHA-256 conditioning), records validation metrics,
 // and appends the conditioned output to the pool. Both the raw event history
 // and the whitened buffer are trimmed to their respective upper bounds.
+//
+// NOTE: this local pool whitening path serves the gateway's entropy HTTP API.
+// It is intentionally independent from per-event `whitened_entropy` values
+// attached to gRPC cloud forwarding messages.
 // This method is safe for concurrent use.
 func (pool *WhitenedPool) AddBatch(events []mqtt.TDCEvent) {
 	if len(events) == 0 {

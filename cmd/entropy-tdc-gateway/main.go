@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/binary"
 	"errors"
 	"flag"
 	"fmt"
@@ -62,11 +64,7 @@ type grpcForwarder struct {
 func (g *grpcForwarder) SendBatch(events []tdcmqtt.TDCEvent, sequence uint32) error {
 	pbEvents := make([]*pb.TDCEvent, len(events))
 	for i, evt := range events {
-		pbEvents[i] = &pb.TDCEvent{
-			RpiTimestampUs: evt.RpiTimestampUs,
-			TdcTimestampPs: evt.TdcTimestampPs,
-			Channel:        evt.Channel,
-		}
+		pbEvents[i] = toProtoEvent(evt)
 	}
 
 	startTime := time.Now()
@@ -147,11 +145,7 @@ func (f *cloudAwareForwarder) SendBatch(events []tdcmqtt.TDCEvent, sequence uint
 
 	pbEvents := make([]*pb.TDCEvent, len(events))
 	for i, evt := range events {
-		pbEvents[i] = &pb.TDCEvent{
-			RpiTimestampUs: evt.RpiTimestampUs,
-			TdcTimestampPs: evt.TdcTimestampPs,
-			Channel:        evt.Channel,
-		}
+		pbEvents[i] = toProtoEvent(evt)
 	}
 
 	if err := client.SendBatch(pbEvents); err != nil {
@@ -480,11 +474,7 @@ func validateEntropyAddr(addr string, allowPublic bool) error {
 func convertToProtoBatch(events []tdcmqtt.TDCEvent, sequence uint32) *pb.EntropyBatch {
 	pbEvents := make([]*pb.TDCEvent, len(events))
 	for i, evt := range events {
-		pbEvents[i] = &pb.TDCEvent{
-			RpiTimestampUs: evt.RpiTimestampUs,
-			TdcTimestampPs: evt.TdcTimestampPs,
-			Channel:        evt.Channel,
-		}
+		pbEvents[i] = toProtoEvent(evt)
 	}
 
 	return &pb.EntropyBatch{
@@ -492,6 +482,37 @@ func convertToProtoBatch(events []tdcmqtt.TDCEvent, sequence uint32) *pb.Entropy
 		SourceId:      "entropy-tdc-gateway",
 		BatchSequence: sequence,
 	}
+}
+
+// toProtoEvent converts one MQTT event into the protobuf event representation.
+// Canonical whitening input is exactly tdc_timestamp_ps encoded as 8-byte
+// little-endian; this byte encoding is stable and independent of gateway
+// ingestion clock semantics.
+func toProtoEvent(evt tdcmqtt.TDCEvent) *pb.TDCEvent {
+	whitened := whitenEvent(evt)
+	if len(whitened) != sha256.Size {
+		metrics.RecordEventDropped("invalid_whitened_entropy")
+		log.Printf(
+			"grpc: invalid per-event whitening output size=%d (expected=%d) tdc_timestamp_ps=%d",
+			len(whitened),
+			sha256.Size,
+			evt.TdcTimestampPs,
+		)
+		whitened = nil
+	}
+
+	return &pb.TDCEvent{
+		RpiTimestampUs:  evt.RpiTimestampUs,
+		TdcTimestampPs:  evt.TdcTimestampPs,
+		Channel:         evt.Channel,
+		WhitenedEntropy: whitened,
+	}
+}
+
+func whitenEvent(evt tdcmqtt.TDCEvent) []byte {
+	canonical := make([]byte, 8)
+	binary.LittleEndian.PutUint64(canonical, evt.TdcTimestampPs)
+	return entropy.DualStageWhitening(canonical)
 }
 
 // startGRPCConnector launches a background goroutine that retries gRPC

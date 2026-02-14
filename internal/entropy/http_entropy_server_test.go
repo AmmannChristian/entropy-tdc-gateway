@@ -72,7 +72,7 @@ func newHTTPServerWithClock(addr string, pool *WhitenedPool, readyThreshold int,
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(baseUrlV1+"/entropy/bytes", httpServer.handleEntropy)
+	mux.HandleFunc(baseUrlV1+"/entropy/binary", httpServer.handleEntropy)
 	mux.HandleFunc(baseUrlV1+"/health", httpServer.handleHealth)
 	mux.HandleFunc(baseUrlV1+"/ready", httpServer.handleReady)
 
@@ -236,14 +236,14 @@ func TestHandleEntropyRateLimitSetsRetryAfter(t *testing.T) {
 	fakeClock := clock.NewFakeClock()
 	server.rateLimiter = newTokenBucket(1, 1, fakeClock)
 
-	req1 := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=1", nil)
+	req1 := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=1", nil)
 	rec1 := httptest.NewRecorder()
 	server.handleEntropy(rec1, req1)
 	if rec1.Code != http.StatusOK {
 		t.Fatalf("expected first request to succeed, got status %d", rec1.Code)
 	}
 
-	req2 := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=1", nil)
+	req2 := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=1", nil)
 	rec2 := httptest.NewRecorder()
 	server.handleEntropy(rec2, req2)
 	if rec2.Code != http.StatusServiceUnavailable {
@@ -264,7 +264,7 @@ func TestHandleEntropyInsufficientEntropySetsRetryAfter(t *testing.T) {
 	}
 	server.rateLimiter = nil
 
-	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=8", nil)
+	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=8", nil)
 	rec := httptest.NewRecorder()
 	server.retryAfterSeconds = 5
 	server.handleEntropy(rec, req)
@@ -337,7 +337,7 @@ func TestHandleEntropyBytesValidation(t *testing.T) {
 				query = "?bytes=" + query
 			}
 
-			req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes"+query, nil)
+			req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary"+query, nil)
 			rec := httptest.NewRecorder()
 			server.handleEntropy(rec, req)
 
@@ -880,7 +880,7 @@ func TestHandleEntropyWithEmptyPool(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=32", nil)
+	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=32", nil)
 	rec := httptest.NewRecorder()
 	server.handleEntropy(rec, req)
 
@@ -908,7 +908,7 @@ func TestHandleEntropyWithNearEmptyPool(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=1", nil)
+	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=1", nil)
 	rec := httptest.NewRecorder()
 	server.handleEntropy(rec, req)
 
@@ -925,7 +925,7 @@ func TestHandleEntropyWithNilPool(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=32", nil)
+	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=32", nil)
 	rec := httptest.NewRecorder()
 	server.handleEntropy(rec, req)
 
@@ -956,7 +956,7 @@ func TestHandleEntropySuccessHeaders(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/bytes?bytes=64", nil)
+	req := httptest.NewRequest(http.MethodGet, baseUrlV1+"/entropy/binary?bytes=64", nil)
 	rec := httptest.NewRecorder()
 	server.handleEntropy(rec, req)
 
@@ -1018,7 +1018,7 @@ func TestHandleEntropyConcurrentRequests(t *testing.T) {
 	// Launch concurrent requests
 	for i := 0; i < numRequests; i++ {
 		go func() {
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("%s/entropy/bytes?bytes=%d", baseUrlV1, bytesPerRequest), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("%s/entropy/binary?bytes=%d", baseUrlV1, bytesPerRequest), nil)
 			rec := httptest.NewRecorder()
 			server.handleEntropy(rec, req)
 			results <- rec.Code

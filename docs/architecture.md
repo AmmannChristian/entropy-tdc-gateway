@@ -280,7 +280,7 @@ The `HTTPServer` exposes three endpoints under the `/api/v1` base path for local
 
 | Endpoint | Method | Content-Type | Purpose |
 |---|---|---|---|
-| `/api/v1/entropy/bytes` | GET | `application/octet-stream` | Retrieve conditioned entropy bytes |
+| `/api/v1/entropy/binary` | GET | `application/octet-stream` | Retrieve conditioned entropy bytes |
 | `/api/v1/health` | GET | `text/plain` | Pool diagnostic status |
 | `/api/v1/ready` | GET | `text/plain` | Kubernetes-compatible readiness probe |
 

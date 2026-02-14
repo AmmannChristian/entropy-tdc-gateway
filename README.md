@@ -322,7 +322,7 @@ Security hardening directives applied:
 
 The entropy HTTP server exposes three endpoints under the `/api/v1` base path. By default, the server binds to `127.0.0.1:9797` and restricts access to loopback interfaces.
 
-### GET /api/v1/entropy/bytes
+### GET /api/v1/entropy/binary
 
 Retrieves conditioned entropy bytes from the whitened pool.
 

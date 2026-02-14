@@ -133,6 +133,9 @@ message TDCEvent {
   optional int64 delta_ps = 4;
   // Bit flags indicating hardware conditions (e.g., saturation, overrun).
   optional uint32 flags = 5;
+  // 32-byte SHA-256 output of DualStageWhitening over the canonical event bytes.
+  // Canonical bytes are: little-endian uint64 encoding of tdc_timestamp_ps.
+  bytes whitened_entropy = 6;
 }
 
 // EdgeMetrics contains quality and performance metrics computed at the edge
