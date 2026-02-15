@@ -68,7 +68,7 @@ func (g *grpcForwarder) SendBatch(events []tdcmqtt.TDCEvent, sequence uint32) er
 	}
 
 	startTime := time.Now()
-	err := g.client.SendBatch(pbEvents)
+	err := g.client.SendBatch(pbEvents, sequence)
 	duration := time.Since(startTime).Seconds()
 
 	if err != nil {
@@ -148,7 +148,7 @@ func (f *cloudAwareForwarder) SendBatch(events []tdcmqtt.TDCEvent, sequence uint
 		pbEvents[i] = toProtoEvent(evt)
 	}
 
-	if err := client.SendBatch(pbEvents); err != nil {
+	if err := client.SendBatch(pbEvents, sequence); err != nil {
 		metrics.RecordBatch(len(events), localDuration, false, err.Error())
 		return err
 	}

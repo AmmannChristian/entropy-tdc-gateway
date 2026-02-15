@@ -131,7 +131,7 @@ func (c *Client) connect() error {
 // SendBatch transmits an EntropyBatch containing the given events over the
 // active stream. If the send fails the client marks itself disconnected and
 // triggers an asynchronous reconnection attempt.
-func (c *Client) SendBatch(events []*pb.TDCEvent) error {
+func (c *Client) SendBatch(events []*pb.TDCEvent, sequence uint32) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -140,7 +140,9 @@ func (c *Client) SendBatch(events []*pb.TDCEvent) error {
 	}
 
 	batch := &pb.EntropyBatch{
-		Events: events,
+		Events:           events,
+		BatchTimestampUs: uint64(time.Now().UnixMicro()),
+		BatchSequence:    sequence,
 	}
 
 	if err := c.stream.Send(batch); err != nil {

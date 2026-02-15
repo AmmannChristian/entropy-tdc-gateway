@@ -294,7 +294,7 @@ func TestClient_SendBatch_Success(t *testing.T) {
 		{RpiTimestampUs: 1001, TdcTimestampPs: 2001, Channel: 0},
 	}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err != nil {
 		t.Fatalf("SendBatch failed: %v", err)
 	}
@@ -309,6 +309,9 @@ func TestClient_SendBatch_Success(t *testing.T) {
 
 	if len(batches[0].Events) != 2 {
 		t.Errorf("expected 2 events, got %d", len(batches[0].Events))
+	}
+	if batches[0].BatchSequence != 1 {
+		t.Errorf("expected batch sequence 1, got %d", batches[0].BatchSequence)
 	}
 }
 
@@ -334,7 +337,7 @@ func TestClient_SendBatch_NotConnected(t *testing.T) {
 		{RpiTimestampUs: 1000, TdcTimestampPs: 2000, Channel: 0},
 	}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err == nil {
 		t.Fatal("expected error when not connected")
 	}
@@ -471,7 +474,7 @@ func TestClient_ReceiveAcks_EOF(t *testing.T) {
 		{RpiTimestampUs: 1000, TdcTimestampPs: 2000, Channel: 0},
 	}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err != nil {
 		t.Fatalf("SendBatch failed: %v", err)
 	}
@@ -723,7 +726,7 @@ func TestClient_SendBatch_StreamError(t *testing.T) {
 		{RpiTimestampUs: 1000, TdcTimestampPs: 2000, Channel: 0},
 	}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err == nil {
 		t.Fatal("expected error when sending to closed stream")
 	}
@@ -799,7 +802,7 @@ func TestClient_SendBatch_ConcurrentAccess(t *testing.T) {
 			events := []*pb.TDCEvent{
 				{RpiTimestampUs: uint64(seq * 1000), TdcTimestampPs: uint64(seq * 2000), Channel: 0},
 			}
-			if err := client.SendBatch(events); err != nil {
+			if err := client.SendBatch(events, uint32(seq)); err != nil {
 				t.Logf("SendBatch %d failed: %v", seq, err)
 			}
 		}(i)
@@ -1022,7 +1025,7 @@ func TestClient_SendBatch_TriggerReconnect(t *testing.T) {
 		{RpiTimestampUs: 1000, TdcTimestampPs: 2000, Channel: 0},
 	}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err != nil {
 		t.Fatalf("SendBatch failed: %v", err)
 	}
@@ -1040,7 +1043,7 @@ func TestClient_SendBatch_TriggerReconnect(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Try to send again - should fail and trigger reconnect
-	err = client.SendBatch(events)
+	err = client.SendBatch(events, 2)
 	if err == nil {
 		t.Fatal("expected error after stream closed")
 	}
@@ -1218,7 +1221,7 @@ func TestClient_SendBatch_MultipleEventsSequence(t *testing.T) {
 			{RpiTimestampUs: uint64(i * 100), TdcTimestampPs: uint64(i * 200), Channel: uint32(i % 4)},
 		}
 
-		if err := client.SendBatch(events); err != nil {
+		if err := client.SendBatch(events, uint32(i+1)); err != nil {
 			t.Fatalf("SendBatch %d failed: %v", i, err)
 		}
 	}
@@ -1248,7 +1251,7 @@ func TestClient_SendBatch_EmptyEvents(t *testing.T) {
 	// Send batch with no events
 	events := []*pb.TDCEvent{}
 
-	err := client.SendBatch(events)
+	err := client.SendBatch(events, 1)
 	if err != nil {
 		t.Fatalf("SendBatch failed: %v", err)
 	}
@@ -1317,7 +1320,7 @@ func TestClient_Connect_Success(t *testing.T) {
 
 	// Test sending
 	events := []*pb.TDCEvent{{RpiTimestampUs: 1000, TdcTimestampPs: 2000, Channel: 0}}
-	if err := client.SendBatch(events); err != nil {
+	if err := client.SendBatch(events, 1); err != nil {
 		t.Errorf("SendBatch failed: %v", err)
 	}
 
