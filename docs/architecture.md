@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-This document provides a formal architectural description of the entropy-tdc-gateway, a Go-based edge gateway service within the high-entropy-api system. The gateway is responsible for collecting, conditioning, validating, and distributing entropy derived from Time-to-Digital Converter (TDC) measurements of Strontium-90 radioactive decay events. This document is structured for direct incorporation into an academic thesis and follows a top-down decomposition from system context through component architecture to interface specifications.
+This document provides a formal architectural description of the entropy-tdc-gateway, a Go-based edge gateway service within the decay-entropy-stream system. The gateway is responsible for collecting, conditioning, validating, and distributing entropy derived from Time-to-Digital Converter (TDC) measurements of Strontium-90 radioactive decay events. This document is structured for direct incorporation into an academic thesis and follows a top-down decomposition from system context through component architecture to interface specifications.
 
 ## 2. System Context
 

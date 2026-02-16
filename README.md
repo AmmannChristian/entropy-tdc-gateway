@@ -17,7 +17,7 @@ A Go-based edge gateway service that collects high-quality entropy from Time-to-
 
 ## Overview
 
-The entropy-tdc-gateway operates at the edge of the high-entropy-api system, deployed on a Raspberry Pi alongside TDC hardware that measures the inter-arrival times of beta particles emitted by a Strontium-90 radioactive source. Each decay event produces a picosecond-resolution timestamp that the TDC publishes to a local MQTT broker. The gateway subscribes to these timestamp topics, aggregates events into fixed-size batches, applies cryptographic conditioning to produce uniform random bytes, and exposes the conditioned output through a local HTTP API.
+The entropy-tdc-gateway operates at the edge of the decay-entropy-stream system, deployed on a Raspberry Pi alongside TDC hardware that measures the inter-arrival times of beta particles emitted by a Strontium-90 radioactive source. Each decay event produces a picosecond-resolution timestamp that the TDC publishes to a local MQTT broker. The gateway subscribes to these timestamp topics, aggregates events into fixed-size batches, applies cryptographic conditioning to produce uniform random bytes, and exposes the conditioned output through a local HTTP API.
 
 The primary functions of the gateway are:
 
