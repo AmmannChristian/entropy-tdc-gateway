@@ -431,9 +431,7 @@ func TestComputeRunsPValue_EdgeCases(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // computeRCTStat Tests
-// ============================================================================
 
 func TestComputeRCTStat_NoRepetitions(t *testing.T) {
 	t.Parallel()
@@ -571,9 +569,7 @@ func TestComputeRCTStat_SingleByte(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // computeAPTStat Tests
-// ============================================================================
 
 func TestComputeAPTStat_UniformDistribution(t *testing.T) {
 	t.Parallel()
@@ -744,9 +740,7 @@ func TestComputeAPTStat_MultipleValuesSameFrequency(t *testing.T) {
 	t.Logf("Equal frequencies: APT stat=%.3f", stat)
 }
 
-// ============================================================================
 // Integration Tests - Test all functions together
-// ============================================================================
 
 func TestTestSummary_IntegrationWithRealWorldData(t *testing.T) {
 	t.Parallel()
@@ -789,9 +783,7 @@ func TestTestSummary_IntegrationWithRealWorldData(t *testing.T) {
 		summary.FreqPvalue, summary.RunsPvalue, *summary.RctStat, *summary.AptStat)
 }
 
-// ============================================================================
 // Benchmark Tests
-// ============================================================================
 
 func BenchmarkComputeTestSummary(b *testing.B) {
 	data := make([]byte, 1024)

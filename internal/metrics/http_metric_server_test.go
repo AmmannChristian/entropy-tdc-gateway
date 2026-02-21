@@ -504,9 +504,7 @@ func TestServer_Shutdown_MultipleCalls(t *testing.T) {
 	_ = err
 }
 
-// ============================================================================
 // validateAddress Tests
-// ============================================================================
 
 func TestValidateAddress_ValidFormats(t *testing.T) {
 	t.Parallel()
@@ -611,9 +609,7 @@ func TestValidateAddress_EdgeCases(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Integration Tests
-// ============================================================================
 
 func TestServer_FullLifecycle(t *testing.T) {
 	t.Parallel()
@@ -673,9 +669,7 @@ func TestServer_FullLifecycle(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Helper Functions
-// ============================================================================
 
 // getFreePort asks the kernel for a free open port that is ready to use.
 func getFreePort(t *testing.T) int {
@@ -724,9 +718,7 @@ func waitForServer(t *testing.T, addr string, timeout time.Duration) {
 // - TestReadTLSFile_NonexistentFile: Non-existent file error handling
 // - TestReadTLSFile_EmptyPath: Empty path error handling
 
-// ============================================================================
 // StartTLS Tests
-// ============================================================================
 
 func TestServer_StartTLS_NilServer(t *testing.T) {
 	t.Parallel()

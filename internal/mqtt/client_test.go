@@ -822,9 +822,7 @@ func TestClient_ConnectionLostHandler(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Connect with Nil Client Tests
-// ============================================================================
 
 func TestClient_ConnectWithNilPahoClient(t *testing.T) {
 	t.Parallel()
@@ -851,9 +849,7 @@ func TestClient_ConnectWithNilPahoClient(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Initial Subscription Timeout Tests
-// ============================================================================
 
 func TestClient_InitialSubscriptionTimeout(t *testing.T) {
 	t.Parallel()
@@ -895,9 +891,7 @@ func TestClient_InitialSubscriptionTimeout(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Subscribe Timeout on Reconnect Tests
-// ============================================================================
 
 func TestHandleConnect_SubscribeTimeoutOnReconnect(t *testing.T) {
 	t.Parallel()
@@ -932,9 +926,7 @@ func TestHandleConnect_SubscribeTimeoutOnReconnect(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Close with Nil Client Tests
-// ============================================================================
 
 func TestClient_CloseWithNilPahoClient(t *testing.T) {
 	t.Parallel()
@@ -969,9 +961,7 @@ func TestClient_CloseWithClosedConnection(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Generate Client ID Error Path Tests
-// ============================================================================
 
 func TestGenerateClientID_FormatValidation(t *testing.T) {
 	t.Parallel()
@@ -1002,9 +992,7 @@ func TestGenerateClientID_FormatValidation(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // QoS Boundary Tests
-// ============================================================================
 
 func TestNewClient_QoSBoundaries(t *testing.T) {
 	t.Parallel()
@@ -1041,9 +1029,7 @@ func TestNewClient_QoSBoundaries(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // TLS CA Certificate Tests
-// ============================================================================
 
 func TestCreateMQTTTLSConfig_CustomCA(t *testing.T) {
 	t.Parallel()
@@ -1109,9 +1095,7 @@ func TestGenerateClientID_ReturnsNonEmpty(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Helper Types
-// ============================================================================
 
 type stubHandler struct {
 	onMessage func(string, []byte)

@@ -659,9 +659,7 @@ func TestConfig_RateLimitConfiguration(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Collector Batch Size Tests
-// ============================================================================
 
 func TestConfig_CollectorBatchSize(t *testing.T) {
 	t.Run("Valid batch size", func(t *testing.T) {
@@ -730,9 +728,7 @@ func TestConfig_CollectorBatchSize(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Metrics Configuration Tests
-// ============================================================================
 
 func TestConfig_MetricsConfiguration(t *testing.T) {
 	t.Run("Metrics port from env", func(t *testing.T) {
@@ -808,9 +804,7 @@ func TestConfig_MetricsConfiguration(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Entropy Server Configuration Tests
-// ============================================================================
 
 func TestConfig_EntropyServerConfiguration(t *testing.T) {
 	t.Run("Entropy bind from env", func(t *testing.T) {
@@ -840,9 +834,7 @@ func TestConfig_EntropyServerConfiguration(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Integration Test - All Environment Variables
-// ============================================================================
 
 func TestConfig_AllEnvironmentVariablesIntegration(t *testing.T) {
 	// Create temporary password file
@@ -973,9 +965,7 @@ func TestConfig_AllEnvironmentVariablesIntegration(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // ParseBoolEnv Additional Edge Cases
-// ============================================================================
 
 func TestParseBoolEnv_AdditionalCases(t *testing.T) {
 	const key = "PARSE_BOOL_EDGE_CASES"
@@ -1007,9 +997,7 @@ func TestParseBoolEnv_AdditionalCases(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Factory Function Refactoring Tests (replacing lines 230-240)
-// ============================================================================
 
 func TestConfig_ValidationWithFactory(t *testing.T) {
 	tests := []struct {
@@ -1058,9 +1046,7 @@ func TestConfig_ValidationWithFactory(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Error Path Coverage Tests
-// ============================================================================
 
 func TestConfig_LoadErrorPaths(t *testing.T) {
 	t.Run("applyMQTTEnvVars error propagates", func(t *testing.T) {
@@ -1077,9 +1063,7 @@ func TestConfig_LoadErrorPaths(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Integer Overflow and Boundary Tests
-// ============================================================================
 
 func TestConfig_IntegerOverflowBoundaries(t *testing.T) {
 	t.Run("extremely large pool min bytes", func(t *testing.T) {
@@ -1147,9 +1131,7 @@ func TestConfig_IntegerOverflowBoundaries(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Additional TLS Edge Cases
-// ============================================================================
 
 func TestConfig_TLSEdgeCases(t *testing.T) {
 	t.Run("empty TLS CA file env var", func(t *testing.T) {
@@ -1193,9 +1175,7 @@ func TestConfig_TLSEdgeCases(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Additional Entropy Pool Configuration Tests
-// ============================================================================
 
 func TestConfig_EntropyPoolAdditionalCases(t *testing.T) {
 	t.Run("retry after seconds boundary", func(t *testing.T) {
@@ -1257,9 +1237,7 @@ func TestConfig_EntropyPoolAdditionalCases(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // String() Method Coverage
-// ============================================================================
 
 func TestConfig_StringRedactionAndContent(t *testing.T) {
 	t.Run("string output contains key fields", func(t *testing.T) {
@@ -1294,9 +1272,7 @@ func TestConfig_StringRedactionAndContent(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Collector Batch Size Additional Edge Cases
-// ============================================================================
 
 func TestConfig_CollectorBatchSizeEdgeCases(t *testing.T) {
 	t.Run("batch size exactly at minimum", func(t *testing.T) {
@@ -1353,9 +1329,7 @@ func TestConfig_CollectorBatchSizeEdgeCases(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // Metrics Configuration Additional Edge Cases
-// ============================================================================
 
 func TestConfig_MetricsAdditionalCases(t *testing.T) {
 	t.Run("metrics port zero", func(t *testing.T) {
@@ -1402,9 +1376,7 @@ func TestConfig_MetricsAdditionalCases(t *testing.T) {
 	})
 }
 
-// ============================================================================
 // TLS Validation Coverage (applyMetricsEnvVars, applyGRPCEnvVars, validate)
-// ============================================================================
 
 func TestConfig_EntropyTLSValidation(t *testing.T) {
 	t.Run("entropy TLS enabled requires cert file", func(t *testing.T) {

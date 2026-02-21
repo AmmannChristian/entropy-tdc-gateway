@@ -24,9 +24,9 @@ const (
 	defaultReadyMinBytes     = 1024
 	defaultRetryAfterSeconds = 1
 	defaultMetricsPort       = 8000
-	defaultBatchSize         = 1840   // 10s @ 184Hz = 32 bytes/10s = 3.2 bytes/s
-	minBatchSize             = 1840   // 10s minimum
-	maxBatchSize             = 184000 // 1000s maximum (16.7 minutes)
+	defaultBatchSize         = 1840   // Default event count for approximately ten seconds of nominal acquisition.
+	minBatchSize             = 1840   // Minimum supported batch size.
+	maxBatchSize             = 184000 // Maximum supported batch size.
 )
 
 // MQTT contains configuration for the MQTT broker connection.

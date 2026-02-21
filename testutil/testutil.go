@@ -18,9 +18,9 @@ var registryMu sync.Mutex
 // of the test. It reconfigures the metrics package to use the per-test registry
 // and restores the previous registerer once the test completes.
 //
-// IMPORTANT: This function holds a global lock for the entire test duration to
-// prevent data races when swapping metric registries. This means tests using
-// metrics will run serially, but this ensures thread safety.
+// This function holds a package-level lock for the entire test duration to
+// prevent data races while swapping metric registries. As a result, tests that
+// depend on this helper execute serially.
 func ResetRegistryForTest(t *testing.T) *prometheus.Registry {
 	t.Helper()
 
@@ -37,7 +37,8 @@ func ResetRegistryForTest(t *testing.T) *prometheus.Registry {
 	return reg
 }
 
-// WaitForCondition cooperatively polls probe until it reports success or the context or iteration budget is exhausted.
+// WaitForCondition polls probe until it reports success or the context is
+// cancelled.
 func WaitForCondition[T any](ctx context.Context, probe func() (T, bool)) (T, error) {
 	var zero T
 	ticker := time.NewTicker(2 * time.Millisecond)
@@ -57,8 +58,8 @@ func WaitForCondition[T any](ctx context.Context, probe func() (T, bool)) (T, er
 	}
 }
 
-// WaitForError waits for an error to be sent on the channel with a timeout.
-// It returns the error received from the channel, or fails the test on timeout.
+// WaitForError blocks until ch yields a value and returns that value.
+// The helper fails the test only if WaitForCondition returns an error.
 func WaitForError(t *testing.T, ch <-chan error, desc string) error {
 	t.Helper()
 	ctx := context.Background()

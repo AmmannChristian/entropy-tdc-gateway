@@ -400,6 +400,9 @@ func setupMQTT(config tdcconfig.Config, batchCollector *collector.BatchCollector
 	return client, nil
 }
 
+// connectMQTTWithRetry repeatedly invokes setupMQTTFunc until a connection is
+// established. It applies exponential back-off with bounded jitter so multiple
+// instances do not retry in lockstep during broker outages.
 func connectMQTTWithRetry(config tdcconfig.Config, batchCollector *collector.BatchCollector) (mqttClient, error) {
 	const (
 		initialDelay   = 1 * time.Second
@@ -509,6 +512,9 @@ func toProtoEvent(evt tdcmqtt.TDCEvent) *pb.TDCEvent {
 	}
 }
 
+// whitenEvent derives canonical whitening input from the TDC picosecond
+// timestamp only. This keeps per-event whitening deterministic and independent
+// of gateway ingestion-time metadata.
 func whitenEvent(evt tdcmqtt.TDCEvent) []byte {
 	canonical := make([]byte, 8)
 	binary.LittleEndian.PutUint64(canonical, evt.TdcTimestampPs)

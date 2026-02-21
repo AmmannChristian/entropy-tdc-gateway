@@ -1187,9 +1187,7 @@ func TestRun_EntropyTLSConfiguration(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // grpcForwarder Tests
-// ============================================================================
 
 func TestGRPCForwarder_ConversionLogic(t *testing.T) {
 	testutil.ResetRegistryForTest(t)
@@ -1276,9 +1274,7 @@ func TestSetupBatchCollector_WithoutCloudForwarder(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // waitForShutdown Error Handling Tests
-// ============================================================================
 
 func TestWaitForShutdown_EntropyShutdownError(t *testing.T) {
 	testutil.ResetRegistryForTest(t)

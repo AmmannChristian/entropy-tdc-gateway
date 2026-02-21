@@ -101,7 +101,8 @@ func TestEstimateMCV_BiasedDistribution(t *testing.T) {
 
 	minEntropy := EstimateMCV(data)
 
-	// For 70/30 distribution: p_max = 0.7, min_entropy = -log2(0.7) ≈ 0.515
+	// For this distribution, the expected value is the negative base-two
+	// logarithm of 0.7.
 	expectedEntropy := -math.Log2(0.7)
 	if math.Abs(minEntropy-expectedEntropy) > 0.0001 {
 		t.Errorf("Expected min-entropy=%.6f for 70/30 distribution, got %.6f", expectedEntropy, minEntropy)
@@ -253,7 +254,7 @@ func TestEstimateMCV_LowEntropyWarning(t *testing.T) {
 				}
 				return d
 			}(),
-			expectedBelow75: true, // -log2(0.9) ≈ 0.152 < 7.5
+			expectedBelow75: true, // Strongly biased input remains below the 7.5 threshold.
 		},
 		{
 			name: "NearUniform",
@@ -348,7 +349,7 @@ func TestEstimateCollision_EarlyCollision(t *testing.T) {
 
 	minEntropy := EstimateCollision(data)
 
-	// t_collision = 5, so min_entropy = log2(5) ≈ 2.32
+	// The first repeated value appears at position five.
 	expectedEntropy := math.Log2(5)
 	if math.Abs(minEntropy-expectedEntropy) > 0.0001 {
 		t.Errorf("Expected min-entropy=%.6f for early collision, got %.6f", expectedEntropy, minEntropy)
@@ -368,7 +369,8 @@ func TestEstimateCollision_LateCollision(t *testing.T) {
 
 	minEntropy := EstimateCollision(data)
 
-	// t_collision = 257, so min_entropy = log2(257) ≈ 8.00 (clamped to 8.0)
+	// The first repeated value appears at position 257, which reaches the
+	// implementation ceiling of 8.0 bits per byte.
 	expectedEntropy := 8.0 // Clamped to maximum
 	if math.Abs(minEntropy-expectedEntropy) > 0.0001 {
 		t.Errorf("Expected min-entropy=%.6f for late collision, got %.6f", expectedEntropy, minEntropy)
@@ -592,7 +594,7 @@ func TestEstimateCollision_RepeatingPattern(t *testing.T) {
 	minEntropy := EstimateCollision(data)
 
 	// First collision at position 5 (when we see '0' again)
-	// t_collision = 5, min_entropy = log2(5) ≈ 2.32
+	// The first repeated value appears at position five.
 	expectedEntropy := math.Log2(5)
 	if math.Abs(minEntropy-expectedEntropy) > 0.0001 {
 		t.Errorf("Expected min-entropy=%.6f for repeating pattern, got %.6f", expectedEntropy, minEntropy)

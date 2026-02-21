@@ -7,12 +7,12 @@ import (
 // RepetitionCountTest implements the Repetition Count Test from
 // NIST SP 800-90B Section 4.4.1. It detects stuck-at faults by counting
 // consecutive identical samples. The test fails when a sample value repeats
-// C or more consecutive times, where C is derived from a chosen false-positive
-// probability alpha. The default cutoff of 40 corresponds to alpha = 2^-40.
+// at or above the configured cutoff. The default cutoff is aligned with the
+// NIST SP 800-90B profile for very low false-positive probability.
 // All methods are safe for concurrent use.
 type RepetitionCountTest struct {
 	mu          sync.Mutex
-	cutoff      int  // C = cutoff threshold (typically 40 for α=2^-40)
+	cutoff      int  // Repetition threshold before a failure is reported.
 	lastSample  byte // Most recently observed sample
 	repeatCount int  // Current consecutive repeat count
 	initialized bool // Whether we've seen the first sample
@@ -22,7 +22,7 @@ type RepetitionCountTest struct {
 // cutoff threshold. If cutoff is zero or negative, it defaults to 40.
 func NewRepetitionCountTest(cutoff int) *RepetitionCountTest {
 	if cutoff <= 0 {
-		cutoff = 40 // Default from NIST SP 800-90B for α=2^-40
+		cutoff = 40 // Default value from the NIST SP 800-90B profile.
 	}
 
 	return &RepetitionCountTest{
@@ -50,11 +50,11 @@ func (rct *RepetitionCountTest) Test(sample byte) bool {
 	if sample == rct.lastSample {
 		rct.repeatCount++
 		if rct.repeatCount >= rct.cutoff {
-			// Test FAILED,too many consecutive identical samples
+			// The failure threshold has been reached.
 			return false
 		}
 	} else {
-		// Different sample,reset counter
+		// A different sample resets the repetition count.
 		rct.repeatCount = 1
 		rct.lastSample = sample
 	}
@@ -95,14 +95,14 @@ func (rct *RepetitionCountTest) GetState() (byte, int, int, bool) {
 
 // AdaptiveProportionTest implements the Adaptive Proportion Test from
 // NIST SP 800-90B Section 4.4.2. It detects statistical bias by counting
-// how often the first sample in a window of W samples recurs. The test
-// fails when the recurrence count reaches the cutoff C. The default values
-// of C=605 and W=4096 correspond to alpha = 2^-40 with H=0.5.
+// how often the first sample in a window recurs. The test fails when the
+// recurrence count reaches the configured cutoff. The default cutoff and
+// window size follow the NIST SP 800-90B profile used by this gateway.
 // All methods are safe for concurrent use.
 type AdaptiveProportionTest struct {
 	mu          sync.Mutex
-	cutoff      int  // C = cutoff threshold (typically 605 for α=2^-40, H=0.5)
-	windowSize  int  // W = window size in samples (typically 4096)
+	cutoff      int  // Match-count threshold before a window fails.
+	windowSize  int  // Number of samples evaluated per window.
 	firstSample byte // First sample in current window
 	matchCount  int  // Number of matches to firstSample in current window
 	sampleCount int  // Number of samples collected in current window
@@ -113,7 +113,7 @@ type AdaptiveProportionTest struct {
 // respectively.
 func NewAdaptiveProportionTest(cutoff, windowSize int) *AdaptiveProportionTest {
 	if cutoff <= 0 {
-		cutoff = 605 // Default from NIST SP 800-90B for α=2^-40, H=0.5
+		cutoff = 605 // Default value from the NIST SP 800-90B profile.
 	}
 	if windowSize <= 0 {
 		windowSize = 4096 // Default window size from NIST SP 800-90B
@@ -158,7 +158,7 @@ func (apt *AdaptiveProportionTest) Test(sample byte) bool {
 		return passed
 	}
 
-	// Still collecting samples,test passes
+	// The current window is still collecting samples.
 	return true
 }
 
@@ -186,7 +186,6 @@ func (apt *AdaptiveProportionTest) Reset() {
 }
 
 // GetState returns the current internal state for debugging and monitoring.
-// Returns: (firstSample, matchCount, sampleCount, cutoff, windowSize)
 func (apt *AdaptiveProportionTest) GetState() (byte, int, int, int, int) {
 	apt.mu.Lock()
 	defer apt.mu.Unlock()

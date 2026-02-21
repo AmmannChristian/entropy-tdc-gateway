@@ -789,9 +789,7 @@ func TestMetrics_MultipleResets(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Histogram Bucket Edge Cases
-// ============================================================================
 
 func TestMetrics_HistogramBucketEdgeCases(t *testing.T) {
 	t.Parallel()
@@ -877,9 +875,7 @@ func TestMetrics_HistogramExtremeValues(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Benchmarks
-// ============================================================================
 
 func BenchmarkMetrics_ConcurrentCounterUpdates(b *testing.B) {
 	reg := prometheus.NewRegistry()

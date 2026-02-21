@@ -69,8 +69,8 @@ func NewWhitenedPoolWithBounds(minSize, maxSize int) *WhitenedPool {
 		minPoolSize:  minSize,
 		maxPoolSize:  maxSize,
 		maxRawEvents: defaultMaxRawEventsStored,
-		rct:          validation.NewRepetitionCountTest(40),           // NIST SP 800-90B RCT: cutoff for α=2^-40
-		apt:          validation.NewAdaptiveProportionTest(605, 4096), // NIST SP 800-90B APT: cutoff=605, window=4096 for α=2^-40, H=0.5
+		rct:          validation.NewRepetitionCountTest(40),           // Default RCT threshold recommended by NIST SP 800-90B.
+		apt:          validation.NewAdaptiveProportionTest(605, 4096), // Default APT cutoff and window recommended by NIST SP 800-90B.
 	}
 }
 

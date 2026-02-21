@@ -12,9 +12,9 @@ import (
 )
 
 // FrequencyTest evaluates bit balance in data by computing the ratio of set
-// bits to total bits. The test passes when the ratio falls within [0.45, 0.55].
-// Returns the observed ratio and a boolean indicating pass/fail. Empty input
-// yields (0, false).
+// bits to total bits. The test passes when the ratio is between forty-five and
+// fifty-five percent, inclusive. Returns the observed ratio and a boolean
+// indicating pass or fail. Empty input returns zero and false.
 func FrequencyTest(data []byte) (float64, bool) {
 	if len(data) == 0 {
 		return 0, false
@@ -33,8 +33,9 @@ func FrequencyTest(data []byte) (float64, bool) {
 
 // RunsTest evaluates bit alternation by counting uninterrupted sequences of
 // identical bit values. The test passes when the observed run count deviates
-// by less than 10% from the expected value of n/2. Returns the run count and
-// a boolean indicating pass/fail. Empty input yields (0, false).
+// by less than ten percent from half of the total bit count. Returns the run
+// count and a boolean indicating pass or fail. Empty input returns zero and
+// false.
 func RunsTest(data []byte) (int, bool) {
 	if len(data) == 0 {
 		return 0, false
@@ -106,11 +107,11 @@ func computeFrequencyPValue(data []byte, ratio float64) float64 {
 	expected := n / 2.0
 	chiSq := math.Pow(ones-expected, 2) / expected
 
-	// Approximate p-value using complementary error function
-	// For 1 degree of freedom: P(X > chiSq) ≈ erfc(sqrt(chiSq/2))
+	// Approximate p-value using the complementary error function.
+	// This is the standard approximation for one degree of freedom.
 	pValue := math.Erfc(math.Sqrt(chiSq / 2))
 
-	// Clamp to [0, 1]
+	// Clamp to the valid probability interval.
 	if pValue < 0 {
 		pValue = 0
 	}
@@ -133,11 +134,10 @@ func computeRunsPValue(data []byte, runs int) float64 {
 	// Z-score
 	z := math.Abs(float64(runs)-expectedRuns) / math.Sqrt(variance)
 
-	// Approximate p-value using complementary error function
-	// Two-tailed test
+	// Approximate two-tailed p-value using the complementary error function.
 	pValue := math.Erfc(z / math.Sqrt(2))
 
-	// Clamp to [0, 1]
+	// Clamp to the valid probability interval.
 	if pValue < 0 {
 		pValue = 0
 	}
