@@ -9,13 +9,12 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"entropy-tdc-gateway/api"
 	"entropy-tdc-gateway/internal/clock"
 	"entropy-tdc-gateway/internal/metrics"
 
@@ -364,40 +363,12 @@ func (s *HTTPServer) handleReady(response http.ResponseWriter, _ *http.Request) 
 // handleOpenAPI serves the OpenAPI specification YAML file.
 // This endpoint is public (no auth required) to allow Swagger UI to load the spec.
 func (s *HTTPServer) handleOpenAPI(response http.ResponseWriter, _ *http.Request) {
-	// Construct path to openapi.yaml relative to the binary location
-	// Assuming the binary runs from the project root or api/ is accessible
-	openapiPath := "api/openapi.yaml"
-
-	// Try alternative paths if running from different directories
-	candidatePaths := []string{
-		openapiPath,
-		"../api/openapi.yaml",
-		"../../api/openapi.yaml",
-		"/app/api/openapi.yaml", // Docker container path
-	}
-
-	var specData []byte
-	var err error
-
-	for _, path := range candidatePaths {
-		specData, err = os.ReadFile(filepath.Clean(path))
-		if err == nil {
-			break
-		}
-	}
-
-	if err != nil {
-		log.Printf("entropy http server: failed to read OpenAPI spec: %v", err)
-		http.Error(response, "OpenAPI specification not found", http.StatusNotFound)
-		return
-	}
-
 	response.Header().Set("Content-Type", "application/yaml")
 	response.Header().Set("Access-Control-Allow-Origin", "*")
 	response.Header().Set("Cache-Control", "public, max-age=3600")
 	response.WriteHeader(http.StatusOK)
 
-	if _, err := response.Write(specData); err != nil {
+	if _, err := response.Write(api.Spec); err != nil {
 		log.Printf("entropy http server: failed to write OpenAPI spec: %v", err)
 	}
 }
