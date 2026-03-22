@@ -1,3 +1,8 @@
+[![CI](https://github.com/AmmannChristian/entropy-tdc-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/AmmannChristian/entropy-tdc-gateway/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/AmmannChristian/entropy-tdc-gateway/graph/badge.svg)](https://app.codecov.io/gh/AmmannChristian/entropy-tdc-gateway)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/AmmannChristian/entropy-tdc-gateway/blob/main/LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/AmmannChristian/entropy-tdc-gateway)](go.mod)
+
 # entropy-tdc-gateway
 
 ## Overview
